@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 Suman Journal Reads</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Roboto&display=swap');
+
+/* Body + Animated Background */
+body {
+  margin:0;
+  font-family:'Roboto',sans-serif;
+  background: linear-gradient(120deg, #fff9e6, #fff2cc);
+  overflow-x:hidden;
+  position:relative;
+}
+body::after {
+  content:""; position:absolute; top:0; left:0; width:200%; height:200%;
+  background: radial-gradient(circle, rgba(255,215,0,0.1) 1px, transparent 1px);
+  background-size:50px 50px;
+  animation: movebg 60s linear infinite;
+  z-index:-1;
+}
+@keyframes movebg{
+  from{transform:translate(0,0);}
+  to{transform:translate(-50px,-50px);}
+}
+
+/* Typography */
+h1 {
+  font-family:'Playfair Display', serif;
+  text-align:center;
+  font-size:3em;
+  color:#b8860b;
+  margin:20px 0;
+  text-shadow:1px 1px 8px #fff3b0;
+}
+.quote {
+  text-align:center;
+  font-style:italic;
+  color:#996515;
+  margin-bottom:20px;
+  transition:all 0.5s ease-in-out;
+}
+
+/* Inputs & Buttons */
+input, textarea, select, button {
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:10px;
+  border:none;
+  font-size:1em;
+}
+input, textarea, select { background:#fff8dc; color:#5c3d00; }
+button { background:#ffd700; color:#5c3d00; font-weight:bold; cursor:pointer; transition:0.3s; }
+button:hover { background:#ffcc00; transform:scale(1.05); }
+
+/* Article List */
+#articleList { display:flex; flex-wrap:wrap; gap:20px; justify-content:center; padding:20px; }
+.article-card {
+  background: linear-gradient(145deg,#fff7cc,#fff3b0);
+  border-radius:20px;
+  padding:20px;
+  width:320px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+  position:relative;
+  opacity:0;
+  transform:translateY(20px);
+  transition:0.6s ease;
+}
+.article-card.show { opacity:1; transform:translateY(0); }
+.article-card h3 { margin:0 0 5px 0; font-family:'Playfair Display', serif; font-size:1.2em; color:#8b5a00; }
+.article-card p { font-size:0.95em; color:#5c3d00; line-height:1.4; }
+.article-meta { font-size:0.85em; color:#806000; margin-bottom:10px; }
+
+/* Genre Badges */
+.genre-badge {
+  display:inline-block;
+  padding:3px 10px;
+  border-radius:15px;
+  font-size:0.75em;
+  font-weight:bold;
+  margin-right:5px;
+  color:#5c3d00;
+  background:#ffd700;
+  box-shadow:0 0 8px #ffeb99;
+  animation: sparkle 3s infinite alternate;
+}
+@keyframes sparkle{
+  0%{box-shadow:0 0 5px #ffeb99;}
+  50%{box-shadow:0 0 12px #ffe066;}
+  100%{box-shadow:0 0 5px #ffeb99;}
+}
+
+/* Controls */
+.controls { display:flex; justify-content:center; gap:15px; margin-bottom:20px; flex-wrap:wrap; }
+.search-input { width:250px; }
+
+/* Buttons & Counters */
+.heart-btn, .share-btn { cursor:pointer; margin-right:10px; font-weight:bold; }
+.heart-btn:hover { color:#ff4d4d; transform:scale(1.2); transition:0.3s; }
+.like-count, .view-count { font-size:0.85em; color:#996515; margin-left:5px; }
+
+/* Form */
+#formDiv {
+  margin:20px auto;
+  width:90%;
+  max-width:500px;
+  background:#fff8dc;
+  padding:20px;
+  border-radius:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* Reset Button Style */
+#resetBtn { background:#ff4d4d; color:#fff; margin-top:10px; }
+
+/* Article Counter */
+#articleCount { text-align:center; font-weight:bold; color:#8b5a00; margin-bottom:10px; }
+
+/* Confetti */
+.confetti { 
+  position:absolute; width:6px; height:6px; border-radius:50%; pointer-events:none; z-index:9999;
+  filter: drop-shadow(0 0 3px gold);
+}
+
+/* Responsive */
+@media(max-width:768px){
+  .article-card{width:90%;}
+  .controls{flex-direction:column; align-items:center;}
+  .search-input{width:80%;}
+}
+</style>
+</head>
+<body>
+
+<h1>📚 Suman Journal Reads</h1>
+<div class="quote" id="quoteHeader">"Knowledge is the gateway to wisdom."</div>
+
+<div id="loginDiv" style="width:90%; max-width:400px; margin:auto;">
+  <h2>Login to Modify Articles</h2>
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+  <button id="loginBtn">Login</button>
+  <p id="loginMsg" style="color:red;"></p>
+</div>
+
+<div id="formDiv" style="display:none;">
+  <h2>Add / Edit Article</h2>
+  <form id="articleForm">
+    <input type="text" id="title" placeholder="Article Title" required>
+    <input type="url" id="link" placeholder="Article Link" required>
+    <input type="text" id="genre" placeholder="Genre (Technical/Scientific/etc.)" required>
+    <input type="number" id="complexity" placeholder="Complexity (1-10)" min="1" max="10" required>
+    <textarea id="summary" placeholder="50-100 word summary..." required></textarea>
+    <button type="submit">Save Article</button>
+  </form>
+  <button id="logoutBtn">Logout</button>
+  <button id="resetBtn">Reset Login</button>
+</div>
+
+<div class="controls">
+  <input type="text" id="titleSearch" class="search-input" placeholder="Search by title...">
+  <select id="genreFilter">
+    <option value="all">All Genres</option>
+    <option value="Technical">Technical</option>
+    <option value="General">General</option>
+    <option value="Scientific">Scientific</option>
+    <option value="Mysterious">Mysterious</option>
+    <option value="Developmental">Developmental</option>
+    <option value="Cognitive">Cognitive</option>
+  </select>
+  <select id="complexitySort">
+    <option value="none">Sort by Complexity</option>
+    <option value="asc">Low → High</option>
+    <option value="desc">High → Low</option>
+  </select>
+  <select id="dateSort">
+    <option value="none">Sort by Date</option>
+    <option value="asc">Oldest → Newest</option>
+    <option value="desc">Newest → Oldest</option>
+  </select>
+</div>
+
+<p id="articleCount"></p>
+<ul id="articleList"></ul>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getDatabase, ref, push, set, onValue, remove, update, runTransaction } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA45O2lo4v7oI8KdTlyPlFFl2eAEvP2mv8",
+  authDomain: "article-journal-dd253.firebaseapp.com",
+  databaseURL: "https://article-journal-dd253-default-rtdb.firebaseio.com/",
+  projectId: "article-journal-dd253",
+  storageBucket: "article-journal-dd253.firebasestorage.app",
+  messagingSenderId: "799306095224",
+  appId: "1:799306095224:web:45df10fd95357689a36b8d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+const loginDiv = document.getElementById("loginDiv");
+const formDiv = document.getElementById("formDiv");
+const loginMsg = document.getElementById("loginMsg");
+const quoteHeader = document.getElementById("quoteHeader");
+const titleSearch = document.getElementById("titleSearch");
+const resetBtn = document.getElementById("resetBtn");
+const articleCount = document.getElementById("articleCount");
+
+const quotes = [
+  "Knowledge is the gateway to wisdom.",
+  "Every article is a step to mastery.",
+  "Learning never exhausts the mind.",
+  "Curiosity fuels the intellect.",
+  "Read, reflect, and rise."
+];
+quoteHeader.textContent = quotes[Math.floor(Math.random()*quotes.length)];
+
+let currentUser = null;
+let editingId = null;
+let allArticles = {};
+
+// Login / Logout
+document.getElementById("loginBtn").addEventListener("click",()=>{
+  const email=document.getElementById("email").value;
+  const password=document.getElementById("password").value;
+  signInWithEmailAndPassword(auth,email,password)
+    .then(()=>{loginMsg.textContent="";})
+    .catch(err=>{loginMsg.textContent="Error: "+err.message;});
+});
+document.getElementById("logoutBtn").addEventListener("click",()=>signOut(auth));
+
+// Reset Login (Clear Credentials)
+resetBtn.addEventListener("click", ()=>{
+  if(currentUser){
+    signOut(auth).then(()=>{
+      currentUser=null;
+      editingId=null;
+      loginDiv.style.display="block";
+      formDiv.style.display="none";
+      loginMsg.textContent="";
+      document.getElementById("email").value="";
+      document.getElementById("password").value="";
+      alert("Login session cleared! Enter credentials again.");
+    });
+  }
+});
+
+onAuthStateChanged(auth,user=>{
+  currentUser=user;
+  loginDiv.style.display=user?"none":"block";
+  formDiv.style.display=user?"block":"none";
+  renderArticles();
+});
+
+// Add/Edit Article
+document.getElementById("articleForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const data={
+    title: document.getElementById("title").value,
+    link: document.getElementById("link").value,
+    genre: document.getElementById("genre").value,
+    complexity: Number(document.getElementById("complexity").value),
+    summary: document.getElementById("summary").value,
+    timestamp: Date.now(),
+    likes:0,
+    views:0
+  };
+  if(editingId){ update(ref(db,'articles/'+editingId),data); editingId=null; } 
+  else{ const newRef=push(ref(db,'articles')); set(newRef,data); }
+  e.target.reset();
+});
+
+// Fetch Articles
+const articleList = document.getElementById("articleList");
+const articlesRef = ref(db,'articles');
+onValue(articlesRef,snapshot=>{
+  allArticles = snapshot.val()||{};
+  renderArticles();
+});
+
+// Filters & Sorting
+document.getElementById("genreFilter").addEventListener("change",renderArticles);
+document.getElementById("complexitySort").addEventListener("change",renderArticles);
+document.getElementById("dateSort").addEventListener("change",renderArticles);
+titleSearch.addEventListener("input",renderArticles);
+
+// Confetti function
+function createConfetti(x,y){
+  for(let i=0;i<30;i++){
+    const confetti = document.createElement("div");
+    confetti.className="confetti";
+    confetti.style.left=x+"px";
+    confetti.style.top=y+"px";
+    confetti.style.backgroundColor=`hsl(${Math.random()*50 + 40}, 100%, 50%)`;
+    document.body.appendChild(confetti);
+    const angle=Math.random()*2*Math.PI;
+    const velocity=5+Math.random()*5;
+    const vx=Math.cos(angle)*velocity;
+    const vy=Math.sin(angle)*velocity;
+    let t=0;
+    const anim=setInterval(()=>{
+      t+=0.03;
+      confetti.style.left=parseFloat(confetti.style.left)+vx+"px";
+      confetti.style.top=parseFloat(confetti.style.top)+vy+t*2+"px";
+      confetti.style.opacity=1-t*1.2;
+      if(t>1){ clearInterval(anim); confetti.remove(); }
+    },16);
+  }
+}
+
+function renderArticles(){
+  let articlesArr = Object.keys(allArticles).map(id=>({id,...allArticles[id]}));
+  const totalArticles = articlesArr.length;
+
+  // Filter by Genre
+  const genreFilter=document.getElementById("genreFilter").value;
+  if(genreFilter!=="all") articlesArr=articlesArr.filter(a=>a.genre===genreFilter);
+
+  // Search by Title
+  const searchTerm = titleSearch.value.toLowerCase();
+  if(searchTerm) articlesArr = articlesArr.filter(a=>a.title.toLowerCase().includes(searchTerm));
+
+  const showingCount = articlesArr.length;
+
+  // Sort Complexity
+  const complexitySort = document.getElementById("complexitySort").value;
+  if(complexitySort==="asc") articlesArr.sort((a,b)=>a.complexity-b.complexity);
+  if(complexitySort==="desc") articlesArr.sort((a,b)=>b.complexity-a.complexity);
+
+  // Sort Date
+  const dateSort = document.getElementById("dateSort").value;
+  if(dateSort==="asc") articlesArr.sort((a,b)=>a.timestamp-b.timestamp);
+  if(dateSort==="desc") articlesArr.sort((a,b)=>b.timestamp-a.timestamp);
+
+  // Update article counter
+  articleCount.textContent = `Showing ${showingCount} of ${totalArticles} articles`;
+
+  articleList.innerHTML="";
+  articlesArr.forEach(article=>{
+    const li = document.createElement("li");
+    li.className="article-card";
+    const date = new Date(article.timestamp).toLocaleString();
+    const genreBadge=`<span class="genre-badge">${article.genre}</span>`;
+    li.innerHTML=`
+      ${genreBadge}
+      <h3><a href="${article.link}" target="_blank">${article.title}</a></h3>
+      <p class="article-meta">Complexity: ${article.complexity} | Read on: ${date}</p>
+      <p>${article.summary}</p>
+      <div>
+        <span class="heart-btn">❤️</span><span class="like-count">${article.likes||0}</span>
+        <span class="view-count">👁️ ${article.views||0}</span>
+        <button class="share-btn">Share</button>
+      </div>
+    `;
+
+    setTimeout(()=>{ li.classList.add('show'); }, 50);
+
+    if(currentUser){
+      const editBtn=document.createElement("button");
+      editBtn.textContent="Edit"; editBtn.onclick=()=>{
+        document.getElementById("title").value=article.title;
+        document.getElementById("link").value=article.link;
+        document.getElementById("genre").value=article.genre;
+        document.getElementById("complexity").value=article.complexity;
+        document.getElementById("summary").value=article.summary;
+        editingId=article.id;
+        window.scrollTo({top:0,behavior:'smooth'});
+      };
+
+      const delBtn=document.createElement("button");
+      delBtn.textContent="Delete"; delBtn.onclick=()=>remove(ref(db,'articles/'+article.id));
+
+      li.appendChild(editBtn); li.appendChild(delBtn);
+    }
+
+    li.querySelector(".heart-btn").onclick=()=>{
+      const heart=li.querySelector(".heart-btn");
+      const rect=heart.getBoundingClientRect();
+      createConfetti(rect.left+rect.width/2, rect.top+rect.height/2);
+      runTransaction(ref(db,'articles/'+article.id+'/likes'),count=>(count||0)+1);
+    };
+
+    li.querySelector(".share-btn").onclick=()=>{navigator.clipboard.writeText(`Check out this article: ${article.title} - ${article.link}`).then(()=>alert("Link copied to clipboard!"));};
+
+    li.querySelector("h3 a").onclick=()=>runTransaction(ref(db,'articles/'+article.id+'/views'),count=>(count||0)+1);
+
+    articleList.appendChild(li);
+  });
+}
+</script>
+</body>
+</html>
